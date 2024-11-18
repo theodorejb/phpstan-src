@@ -43,7 +43,18 @@ class LocalTypeTraitUseAliasesRuleTest extends RuleTestCase
 	public function testRule(): void
 	{
 		// everything reported by LocalTypeTraitAliasesRule
-		$this->analyse([__DIR__ . '/data/local-type-trait-aliases.php'], []);
+		$this->analyse([__DIR__ . '/data/local-type-trait-aliases.php'], [
+			[
+				'Type alias CircularTypeAliasImport2 contains unknown class LocalTypeTraitAliases\CircularTypeAliasImport2.',
+				39,
+				'Learn more at https://phpstan.org/user-guide/discovering-symbols',
+			],
+			[
+				'Type alias CircularTypeAliasImport1 contains unknown class LocalTypeTraitAliases\CircularTypeAliasImport2.',
+				47,
+				'Learn more at https://phpstan.org/user-guide/discovering-symbols',
+			],
+		]);
 	}
 
 	public function testRuleSpecific(): void

@@ -97,14 +97,6 @@ class LocalTypeTraitAliasesRuleTest extends RuleTestCase
 				39,
 			],
 			[
-				'Circular definition detected in type alias CircularTypeAliasImport2.',
-				39,
-			],
-			[
-				'Circular definition detected in type alias CircularTypeAliasImport1.',
-				47,
-			],
-			[
 				'Invalid type definition detected in type alias InvalidTypeAlias.',
 				62,
 			],

@@ -1132,16 +1132,16 @@ final class ClassReflection
 			$typeAliasImportTags = $resolvedPhpDoc->getTypeAliasImportTags();
 			$typeAliasTags = $resolvedPhpDoc->getTypeAliasTags();
 
-			// prevent circular imports
-			if (array_key_exists($this->getName(), self::$resolvingTypeAliasImports)) {
-				throw new CircularTypeAliasDefinitionException();
-			}
-
 			self::$resolvingTypeAliasImports[$this->getName()] = true;
 
 			$importedAliases = array_map(function (TypeAliasImportTag $typeAliasImportTag): ?TypeAlias {
 				$importedAlias = $typeAliasImportTag->getImportedAlias();
 				$importedFromClassName = $typeAliasImportTag->getImportedFrom();
+
+				// prevent circular imports
+				if (array_key_exists($importedFromClassName, self::$resolvingTypeAliasImports)) {
+					return null;
+				}
 
 				if (!$this->reflectionProvider->hasClass($importedFromClassName)) {
 					return null;

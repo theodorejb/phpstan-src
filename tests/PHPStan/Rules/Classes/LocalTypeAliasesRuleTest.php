@@ -97,12 +97,14 @@ class LocalTypeAliasesRuleTest extends RuleTestCase
 				39,
 			],
 			[
-				'Circular definition detected in type alias CircularTypeAliasImport2.',
+				'Type alias CircularTypeAliasImport2 contains unknown class LocalTypeAliases\CircularTypeAliasImport1.',
 				39,
+				'Learn more at https://phpstan.org/user-guide/discovering-symbols',
 			],
 			[
-				'Circular definition detected in type alias CircularTypeAliasImport1.',
+				'Type alias CircularTypeAliasImport1 contains unknown class LocalTypeAliases\CircularTypeAliasImport1.',
 				47,
+				'Learn more at https://phpstan.org/user-guide/discovering-symbols',
 			],
 			[
 				'Invalid type definition detected in type alias InvalidTypeAlias.',

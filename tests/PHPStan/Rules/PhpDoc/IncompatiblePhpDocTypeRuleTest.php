@@ -442,6 +442,11 @@ class IncompatiblePhpDocTypeRuleTest extends RuleTestCase
 		$this->analyse([__DIR__ . '/data/bug-10622b.php'], []);
 	}
 
+	public function testBug11463(): void
+	{
+		$this->analyse([__DIR__ . '/data/bug-11463.php'], []);
+	}
+
 	public function testParamClosureThis(): void
 	{
 		$this->analyse([__DIR__ . '/data/param-closure-this.php'], [
