@@ -7,6 +7,8 @@ use function function_exists;
 use function is_dir;
 use function is_file;
 use function opcache_get_status;
+use function opcache_invalidate;
+use function opcache_is_script_cached;
 use function stat;
 use function stream_resolve_include_path;
 use function stream_wrapper_register;
@@ -117,6 +119,7 @@ final class FileReadTrapStreamWrapper
 
 		if ($exists) {
 			self::$autoloadLocatedFiles[] = $path;
+			self::evictCachedScript($path);
 		}
 		$this->path = $path;
 		$this->readFromFile = false;
@@ -147,6 +150,44 @@ final class FileReadTrapStreamWrapper
 	}
 
 	/**
+	 * Drops the OPcache entry for a path the trap is about to serve, so that
+	 * the include reads the file through this wrapper instead of taking it from
+	 * shared memory.
+	 *
+	 * OPcache satisfies an include of an already-cached path from shared
+	 * memory: stream_open() still runs - so the path is recorded - but
+	 * stream_read() never does, so the empty script it serves never reaches
+	 * the compiler and the real file executes a second time. A file declaring
+	 * a function then fatals with "Cannot redeclare function...". This affects
+	 * function-per-file packages like php-standard-library and azjezz/psl: a
+	 * files-autoload bootstrap loads every one of them at startup, and the same
+	 * paths stay reachable through a PSR-4 prefix for the autoloader to include
+	 * again.
+	 *
+	 * AutoloadSourceLocator invalidates the trapped paths once the trap is done
+	 * regardless, so this costs no recompilation that wasn't going to happen anyway.
+	 *
+	 * Does not reach opcache.file_cache_only, where a cached script is served
+	 * from disk instead: opcache_get_status() reports OPcache as disabled there,
+	 * opcache_is_script_cached() always says no, and opcache_invalidate() cannot
+	 * drop a file cache entry - no API evicts one. TurboProcessRestarter leaves
+	 * that configuration alone (resolveOpcacheArgs() returns no entries for it),
+	 * so PHPStan never turns it on itself.
+	 */
+	private static function evictCachedScript(string $path): void
+	{
+		if (!self::opcacheEnabled()) {
+			return;
+		}
+
+		if (!opcache_is_script_cached($path)) {
+			return;
+		}
+
+		opcache_invalidate($path, true);
+	}
+
+	/**
 	 * Whether the empty script served for this path would stay in OPcache and
 	 * shadow the real file for the rest of the process.
 	 *
@@ -165,6 +206,11 @@ final class FileReadTrapStreamWrapper
 	 */
 	private static function servesParseError(string $path): bool
 	{
+		return self::resolveServesParseError(PHP_VERSION_ID, self::opcacheEnabled(), $path);
+	}
+
+	private static function opcacheEnabled(): bool
+	{
 		if (self::$opcacheEnabled === null) {
 			self::$opcacheEnabled = false;
 			if (function_exists('opcache_get_status')) {
@@ -173,7 +219,7 @@ final class FileReadTrapStreamWrapper
 			}
 		}
 
-		return self::resolveServesParseError(PHP_VERSION_ID, self::$opcacheEnabled, $path);
+		return self::$opcacheEnabled;
 	}
 
 	public static function resolveServesParseError(int $phpVersionId, bool $opcacheEnabled, string $path): bool
